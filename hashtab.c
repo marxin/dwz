@@ -175,6 +175,7 @@ htab_try_create (size, hash_f, eq_f, del_f)
     }
 
   result->size = size;
+  result->max_size = size;
   result->hash_f = hash_f;
   result->eq_f = eq_f;
   result->del_f = del_f;
@@ -277,6 +278,8 @@ htab_expand (htab)
   olimit = oentries + htab->size;
 
   htab->size = higher_prime_number (htab->size * 2);
+  if (htab->size > htab->max_size)
+    htab->max_size = htab->size;
 
   if (htab->return_allocation_failure)
     {

@@ -99,6 +99,8 @@ struct htab
      of collisions fixed for time of work with the hash table. */
   unsigned int collisions;
 
+  unsigned int max_size;
+
   /* This is non-zero if we are allowed to return NULL for function calls
      that allocate memory.  */
   int return_allocation_failure;

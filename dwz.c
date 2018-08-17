@@ -550,6 +550,17 @@ static unsigned char multifile_sha1[0x14];
 /* True if -q option has been passed.  */
 static bool quiet;
 
+#define DELETE_HASH_TABLE(name) \
+  do { \
+    if (name && !quiet) { \
+      printf ("delete hash:%20s:searched:%12d:max_size:%12d:collisions:%12d:%.2f\n", #name, name->searches, name->max_size, name->collisions, htab_collisions (name)); \
+      htab_delete (name); \
+    } \
+  } \
+  while (false);
+
+
+
 /* A single attribute in abbreviations.  */
 struct abbrev_attr
 {
@@ -949,7 +960,7 @@ read_abbrev (DSO *dso, unsigned char *ptr)
 	    {
 	      error (0, 0, "%s: Unknown DWARF %s",
 		     dso->filename, get_DW_FORM_str (form));
-	      htab_delete (h);
+	      DELETE_HASH_TABLE (h);
 	      return NULL;
 	    }
 	}
@@ -957,7 +968,7 @@ read_abbrev (DSO *dso, unsigned char *ptr)
 	{
 	  error (0, 0, "%s: DWARF abbreviation does not end with 2 zeros",
 		 dso->filename);
-	  htab_delete (h);
+	  DELETE_HASH_TABLE (h);
 	  return NULL;
 	}
 
@@ -982,14 +993,14 @@ read_abbrev (DSO *dso, unsigned char *ptr)
       slot = htab_find_slot_with_hash (h, t, t->hash, INSERT);
       if (slot == NULL)
 	{
-	  htab_delete (h);
+	  DELETE_HASH_TABLE (h);
 	  dwz_oom ();
 	}
       if (*slot != NULL)
 	{
 	  error (0, 0, "%s: Duplicate DWARF abbreviation %d", dso->filename,
 		 t->entry);
-	  htab_delete (h);
+	  DELETE_HASH_TABLE (h);
 	  return NULL;
 	}
       *slot = t;
@@ -3816,7 +3827,7 @@ note_strp_offset (unsigned int off)
 			      + off) + 1;
       if (max_strp_off < s->new_off)
 	{
-	  htab_delete (strp_htab);
+	  DELETE_HASH_TABLE(strp_htab);
 	  strp_htab = NULL;
 	  max_strp_off = 0;
 	  multifile = NULL;
@@ -3984,7 +3995,7 @@ finalize_strp (bool build_tail_offset_list)
       arr[i]->new_off = (len & ~1U) | (arr[i]->new_off & 1);
     }
   qsort (arr, count, sizeof (struct strp_entry *), strrevcmp);
-  htab_delete (strp_htab);
+  DELETE_HASH_TABLE (strp_htab);
   strp_htab = NULL;
   new_count = count;
   for (i = 0; i < count; i++)
@@ -5071,7 +5082,7 @@ read_debug_info (DSO *dso, int kind)
       if (unlikely (op_multifile))
 	for (cu = first_cu; cu; cu = cu->cu_next)
 	  cu->cu_abbrev = NULL;
-      htab_delete (meta_abbrev_htab);
+      DELETE_HASH_TABLE (meta_abbrev_htab);
       meta_abbrev_htab = NULL;
       obstack_free (&ob2, to_free);
       abbrev = NULL;
@@ -5115,7 +5126,7 @@ read_debug_info (DSO *dso, int kind)
       return 0;
     }
 
-  htab_delete (dup_htab);
+  DELETE_HASH_TABLE (dup_htab);
   dup_htab = NULL;
   return 0;
 fail:
@@ -5125,7 +5136,7 @@ fail:
 
       for (cu = first_cu; cu; cu = cu->cu_next)
 	cu->cu_abbrev = NULL;
-      htab_delete (meta_abbrev_htab);
+      DELETE_HASH_TABLE (meta_abbrev_htab);
       meta_abbrev_htab = NULL;
       obstack_free (&ob2, to_free);
     }
@@ -5133,7 +5144,7 @@ fail:
     htab_delete (abbrev);
   if (dup_htab && kind == DEBUG_INFO)
     {
-      htab_delete (dup_htab);
+      DELETE_HASH_TABLE (dup_htab);
       dup_htab = NULL;
     }
   return ret;
@@ -7040,7 +7051,7 @@ handle_macro (void)
 	  htab_traverse (macro_htab, optimize_write_macro, &p);
 	  assert (p == debug_sections[DEBUG_MACRO].new_data
 		       + debug_sections[DEBUG_MACRO].new_size);
-	  htab_delete (macro_htab);
+	  DELETE_HASH_TABLE (macro_htab);
 	  macro_htab = NULL;
 	}
       obstack_free (&ob, (void *) to_free);
@@ -10391,28 +10402,28 @@ cleanup (void)
       cu->cu_new_abbrev = NULL;
     }
   if (off_htab != NULL)
-    htab_delete (off_htab);
+    DELETE_HASH_TABLE (off_htab);
   off_htab = NULL;
   if (types_off_htab != NULL)
-    htab_delete (types_off_htab);
+    DELETE_HASH_TABLE (types_off_htab);
   types_off_htab = NULL;
   if (loc_htab != NULL)
-    htab_delete (loc_htab);
+    DELETE_HASH_TABLE (loc_htab);
   loc_htab = NULL;
   if (dup_htab != NULL)
-    htab_delete (dup_htab);
+    DELETE_HASH_TABLE (dup_htab);
   dup_htab = NULL;
   if (strp_htab != NULL)
-    htab_delete (strp_htab);
+    DELETE_HASH_TABLE (strp_htab);
   strp_htab = NULL;
   if (line_htab != NULL)
-    htab_delete (line_htab);
+    DELETE_HASH_TABLE (line_htab);
   line_htab = NULL;
   if (macro_htab != NULL)
-    htab_delete (macro_htab);
+    DELETE_HASH_TABLE (macro_htab);
   macro_htab = NULL;
   if (meta_abbrev_htab != NULL)
-    htab_delete (meta_abbrev_htab);
+    DELETE_HASH_TABLE (meta_abbrev_htab);
   meta_abbrev_htab = NULL;
 
   for (i = 0; i < SAVED_SECTIONS; ++i)
