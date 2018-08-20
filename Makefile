@@ -1,4 +1,4 @@
-CFLAGS = -O2 -g
+CFLAGS = -O2 -g -march=native
 DWZ_VERSION := $(shell cat VERSION)
 override CFLAGS += -Wall -W -D_FILE_OFFSET_BITS=64 -DDWZ_VERSION='"$(DWZ_VERSION)"'
 prefix = /usr

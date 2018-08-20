@@ -37,6 +37,8 @@ Boston, MA 02110-1301, USA.  */
 #include <string.h>
 #include <stdio.h>
 #include "hashtab.h"
+#include <stdint.h>
+#include <nmmintrin.h>
 
 #include <endian.h>
 #if __BYTE_ORDER == __BIG_ENDIAN
@@ -632,6 +634,60 @@ htab_restore (htab, name, restorefn)
 }
 #endif
 
+unsigned int
+iterative_hash(const void *data, size_t length, hashval_t initval)
+{
+  const unsigned char *k = (const unsigned char *)data;
+  hashval_t len = length;
+  hashval_t crc = initval;
+
+  crc = _mm_crc32_u64 (crc, length);
+
+  while (len >= 8)
+  {
+    crc = _mm_crc32_u64 (crc, *(hashval_t *)k);
+    len -= 8;
+    k += 8;
+  }
+
+  switch (len)
+  {
+    case 7:
+      crc = _mm_crc32_u8 (crc, *k);
+      crc = _mm_crc32_u16 (crc, *(uint16_t *)(k + 1));
+      crc = _mm_crc32_u32 (crc, *(uint32_t *)(k + 3));
+      break;
+    case 6:
+      crc = _mm_crc32_u16 (crc, *(uint16_t *)k);
+      crc = _mm_crc32_u32 (crc, *(uint32_t *)(k + 1));
+      break;
+    case 5:
+      crc = _mm_crc32_u8 (crc, *k);
+      crc = _mm_crc32_u32 (crc, *(uint32_t *)(k + 1));
+      break;
+    case 4:
+      crc = _mm_crc32_u32 (crc, *(uint32_t *)k);
+      break;
+    case 3:
+      crc = _mm_crc32_u8 (crc, *k);
+      crc = _mm_crc32_u16 (crc, *(uint16_t *)(k + 1));
+      break;
+    case 2:
+      crc = _mm_crc32_u16 (crc, *(uint16_t *)k);
+      break;
+    case 1:
+      crc = _mm_crc32_u8 (crc, *k);
+      break;
+    case 0:
+      break;
+    default:
+      abort ();
+  }
+
+  return crc;
+}
+
+
 /* DERIVED FROM:
 --------------------------------------------------------------------
 lookup2.c, by Bob Jenkins, December 1996, Public Domain.
@@ -710,7 +766,7 @@ acceptable.  Do NOT use for cryptographic purposes.
 */
 
 hashval_t
-iterative_hash (const void *k_in /* the key */,
+iterative_hash_old (const void *k_in /* the key */,
                 register size_t  length /* the length of the key */,
                 register hashval_t initval /* the previous hash, or
                                               an arbitrary value */)
