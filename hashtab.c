@@ -277,7 +277,7 @@ htab_expand (htab)
   oentries = htab->entries;
   olimit = oentries + htab->size;
 
-  htab->size = higher_prime_number (htab->size * 2);
+  htab->size = higher_prime_number (htab->size * 4);
   if (htab->size > htab->max_size)
     htab->max_size = htab->size;
 
@@ -383,7 +383,7 @@ htab_find_slot_with_hash (htab, element, hash, insert)
   size_t size;
   void * entry;
 
-  if (insert == INSERT && htab->size * 3 <= htab->n_elements * 4
+  if (insert == INSERT && htab->size * 1 <= htab->n_elements * 4
       && htab_expand (htab) == 0)
     return NULL;
 
